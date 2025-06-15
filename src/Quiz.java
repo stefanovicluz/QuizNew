@@ -1,4 +1,6 @@
-import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class Quiz {
     private Pergunta[] perguntas;
@@ -10,7 +12,7 @@ public class Quiz {
     }
 
     public void iniciar() {
-        Scanner scanner = new Scanner(System.in);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.println("\n===== Iniciando o Quiz =====\n");
 
@@ -24,28 +26,42 @@ public class Quiz {
                 System.out.println((i + 1) + ") " + opcoes[i]);
             }
 
-            System.out.print("Digite o número da opção correta: ");
+            System.out.println("⏳ Você tem 40 segundos para responder!");
 
-            int resposta;
-            while (true) {
-                try {
-                    resposta = Integer.parseInt(scanner.nextLine());
-                    if (resposta < 1 || resposta > opcoes.length) {
-                        System.out.println("Opção inválida. Tente novamente.");
-                    } else {
-                        break;
-                    }
-                } catch (NumberFormatException e) {
-                    System.out.println("Digite um número válido.");
+            String respostaUsuario = null;
+            long tempoLimite = 40000;
+            long inicio = System.currentTimeMillis();
+
+            try {
+                while ((System.currentTimeMillis() - inicio) < tempoLimite && !reader.ready()) {
+                    Thread.sleep(100);
                 }
+
+                if (reader.ready()) {
+                    respostaUsuario = reader.readLine();
+                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
 
-            if (pergunta.verificarResposta(resposta - 1)) {
-                System.out.println("✅ Resposta correta!\n");
-                usuario.adicionarPontos(1);
+            if (respostaUsuario == null || respostaUsuario.trim().isEmpty()) {
+                System.out.println("❌ Tempo esgotado! Pergunta anulada.\n");
             } else {
-                System.out.println("❌ Resposta incorreta.");
-                System.out.println("Resposta correta: " + (pergunta.getRespostaCorreta() + 1) + " - " + opcoes[pergunta.getRespostaCorreta()] + "\n");
+                try {
+                    int resposta = Integer.parseInt(respostaUsuario.trim());
+
+                    if (resposta < 1 || resposta > opcoes.length) {
+                        System.out.println("❌ Opção inválida.\n");
+                    } else if (pergunta.verificarResposta(resposta - 1)) {
+                        System.out.println("✅ Resposta correta!\n");
+                        usuario.adicionarPontos(1);
+                    } else {
+                        System.out.println("❌ Resposta incorreta.");
+                        System.out.println("Resposta correta: " + (pergunta.getRespostaCorreta() + 1) + " - " + opcoes[pergunta.getRespostaCorreta()] + "\n");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("❌ Entrada inválida. Resposta desconsiderada.\n");
+                }
             }
 
             contador++;
